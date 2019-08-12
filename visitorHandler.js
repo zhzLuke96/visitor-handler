@@ -292,7 +292,7 @@
                 obj[key] = Number(num[0] + (tail.length != 0 ? "." + tail : ""))
             }
             if (typeof (item) == "object")
-                obj[key] = arguments.callee(rebuild(item))
+                obj[key] = objNumFixed(rebuild(item))
         }
         return obj
     }
