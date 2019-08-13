@@ -4,12 +4,18 @@
      * window onload callback
      * 并可动态添加行为，且最后的异步接口也基于此
      */
-    let visit_callback = () => {};
+    let visit_callback_called = false;
+    let visit_callback = () => visit_callback_called = true;
     const append_visit_callback = fn => visit_callback = (old => () => {
         old();
         fn();
     })(visit_callback)
-    window.addEventListener("load", () => visit_callback())
+
+    // auto running
+    // window.addEventListener("load", () => visit_callback())
+
+    let window_onload = false;
+    window.addEventListener("load", () => window_onload=true);
 
     // preformance object
     const performance = window.performance || window.mozPerformance || window.msPerformance || window
@@ -47,6 +53,9 @@
         battery: {}
     }
 
+    /**
+     * battery info
+     */
     append_visit_callback(() => navigator.getBattery && navigator.getBattery().then(b => {
         visitor.battery = {
             charging: b.charging,
@@ -55,6 +64,21 @@
             dischargingTime: b.dischargingTime
         }
     }));
+
+    /** 
+     * AdBlock checker
+     * test Injected Stylesheet
+     */
+    append_visit_callback(() => visitor.AdBlockEnabled = testInjectedStylesheet())
+
+    function isVisible (ele) {
+        var style = window.getComputedStyle(ele);
+        return  style.width !== 0 &&
+                style.height !== 0 &&
+                style.opacity !== 0 &&
+                style.display!=='none' &&
+                style.visibility!== 'hidden';
+    }
 
     // function testCPU(){
     //     var _speedconstant = 8.9997e-9; //if speed=(c*a)/t, then constant=(s*t)/a and time=(a*c)/s
@@ -198,6 +222,22 @@
         },
     }
 
+    function testInjectedStylesheet() {
+        const $body = document.querySelector("body")
+        let ad = document.createElement("div")
+        ad.innerHTML = "*****"
+        ad.id = "adbox"
+        ad.classList.add("ad-root")
+        ad.classList.add("google-ad")
+        ad.style.height = "100px"
+        ad.style.display = "100px"
+        $body.appendChild(ad)
+        let ret = !isVisible(document.querySelector("#adbox"))
+        $body.removeChild(ad)
+        delete ad
+        return ret
+    }
+
     /**
      * performance API
      * 访问延迟
@@ -292,7 +332,7 @@
                 obj[key] = Number(num[0] + (tail.length != 0 ? "." + tail : ""))
             }
             if (typeof (item) == "object")
-                obj[key] = arguments.callee(rebuild(item))
+                obj[key] = objNumFixed(rebuild(item))
         }
         return obj
     }
@@ -347,28 +387,33 @@
         name: "Bilibili"
     }];
 
-    const social_check = {};
+    const social_state = {};
     let social_callback = () => {};
     const LEN = o => Object.keys(o).length
-    const check_callback = () => LEN(social_check) == socials.length ? social_callback(social_check) : void(0);
-    socials.forEach(social => {
-        setTimeout(()=>{
-            var img = document.createElement('img');
-            img.src = social.url;
-            img.onload = () => {
-                social_check[social.name] = true;
-                // console.log(social.name, 'logged in');
-                check_callback();
-            }
-            img.onerror = () => {
-                social_check[social.name] = false;
-                // console.log(social.name, 'not logged');
-                check_callback();
-            }
-        },1000)
-    });
+    const check_callback = () => LEN(social_state) == socials.length ? social_callback(social_state) : void(0);
 
+    function social_test(){
+        socials.forEach(social => {
+            setTimeout(()=>{
+                var img = document.createElement('img');
+                img.src = social.url;
+                img.onload = () => {
+                    social_state[social.name] = true;
+                    // console.log(social.name, 'logged in');
+                    check_callback();
+                }
+                img.onerror = () => {
+                    social_state[social.name] = false;
+                    // console.log(social.name, 'not logged');
+                    check_callback();
+                }
+            },1000)
+        });
+    }
 
+    /**
+     * util tool
+     */
     function search(obj, name) {
         for (const key in obj) {
             if (obj.hasOwnProperty(key)) {
@@ -394,12 +439,24 @@
                 PerformanceTiming,
                 // PerformanceEntries,
             })), 2))
+
+            if(window_onload){
+                visit_callback()
+            }else{
+                window.addEventListener("load", () => visit_callback());
+            }
         },
         social(fn) {
             social_callback = fn;
+            if(window_onload){
+                social_test()
+            }else{
+                window.addEventListener("load", () => social_test());
+            }
         },
         is(name) {
             if (!name) return
+            if (!visit_callback_called) visit_callback();
             name = name.toLowerCase()
 
             const isMobile = () => BrowserInfo.is.device["Mobile"]

@@ -46,6 +46,7 @@ visitor.social(social=>{
         "chargingTime": 0,
         "dischargingTime": 0
     },
+    "AdBlockEnabled": true,
     "ScreenInfo": {
         "colorDepth": 24,
         "width": 1920,
@@ -125,6 +126,8 @@ visitor.social(social=>{
 # Performance Timing
 ...
 # Browser
+...
+# AdBlock
 ...
 # Device (CPU / GPU)
 ...
