@@ -53,6 +53,9 @@
         battery: {}
     }
 
+    /**
+     * battery info
+     */
     append_visit_callback(() => navigator.getBattery && navigator.getBattery().then(b => {
         visitor.battery = {
             charging: b.charging,
@@ -61,6 +64,21 @@
             dischargingTime: b.dischargingTime
         }
     }));
+
+    /** 
+     * AdBlock checker
+     * test Injected Stylesheet
+     */
+    append_visit_callback(() => visitor.AdBlockEnabled = testInjectedStylesheet())
+
+    function isVisible (ele) {
+        var style = window.getComputedStyle(ele);
+        return  style.width !== 0 &&
+                style.height !== 0 &&
+                style.opacity !== 0 &&
+                style.display!=='none' &&
+                style.visibility!== 'hidden';
+    }
 
     // function testCPU(){
     //     var _speedconstant = 8.9997e-9; //if speed=(c*a)/t, then constant=(s*t)/a and time=(a*c)/s
@@ -202,21 +220,6 @@
                 'iPhone': ua.indexOf('iPhone') > -1,
             }
         },
-    }
-
-    /** 
-     * AdBlock checker
-     * test Injected Stylesheet
-     */
-    append_visit_callback(() => visitor.AdBlockEnabled = testInjectedStylesheet())
-
-    function isVisible (ele) {
-        var style = window.getComputedStyle(ele);
-        return  style.width !== 0 &&
-                style.height !== 0 &&
-                style.opacity !== 0 &&
-                style.display!=='none' &&
-                style.visibility!== 'hidden';
     }
 
     function testInjectedStylesheet() {
